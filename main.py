@@ -1,11 +1,10 @@
-from pydantic import BaseModel
-from llm import run_query 
+from news import run_query
 from fastapi import FastAPI
-from fastapi.responses import StreamingResponse 
-app = FastAPI()
+from models import QueryRequest, QueryResponse 
+from datetime import date
+from news import get_news_data
 
-class QueryRequest(BaseModel):
-    query : str 
+app = FastAPI()
 
 @app.get('/health')
 def health():
@@ -15,11 +14,17 @@ def health():
 def home():
     return {"message":"Main route for the InfAI backend "}
 
-@app.post('/query')
-def query(request :QueryRequest):
-    def event_generator():
-        for chunk in run_query(request.query):
-            yield f"data: {chunk} \n\n"
+@app.get('/news-today')
+def get_news():
+    today= date.today()
+    response =  get_news_data(str(today))
+    return response
 
-    return StreamingResponse(event_generator(), media_type = "text/event-stream")
+
+@app.post('/query' , response_model = QueryResponse )
+def query_request(request:QueryRequest):
+    response = run_query(request.query) 
+    final_msg = response["messages"][-1].content
+
+    return {"content" : final_msg }
 
