@@ -12,7 +12,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from newspaper import Article
 import feedparser
 from pymongo import MongoClient
-from prompt import prompt_message
+from prompt import prompt_message , prompt
 from models import NewsResponse  
 from datetime import datetime , timezone , timedelta
 from typing import List
@@ -40,14 +40,6 @@ def retrieve_context(query:str ):
         for doc in retrieved_documents
     )
     return serialized , retrieved_documents
-
-
-prompt = """
-You are a summarization agent. You can access a tool called 'retrieve_context' to fetch
-relevant passages from news articles. After retrieval, always summarize the context and
-provide a concise, human-readable answer. Act as a news analyst and give to the point and detail
-oriented answers
-"""
 
 tools = [retrieve_context]
 agent = create_agent(model , tools , system_prompt=prompt)
@@ -176,6 +168,5 @@ def run_query(query:str):
     user_message = HumanMessage(query)
     messages = [user_message]
     response = agent.invoke({"messages":messages})
-    updated_response = response.model_copy(update={"date": datetime.now(timezone.utc) })
-    return updated_response
+    return response
 

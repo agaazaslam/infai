@@ -4,10 +4,14 @@ from pydantic import BaseModel, Field
 
 
 class QueryRequest(BaseModel):
-    query : str 
+    time : str
+    message : str 
+    role: str
 
 class QueryResponse(BaseModel):
-    content: str
+    time : str
+    message: str
+    role: str
 
 
 class NewsItem(BaseModel):
