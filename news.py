@@ -14,8 +14,8 @@ import feedparser
 from pymongo import MongoClient
 from prompt import prompt_message
 from models import NewsResponse  
-
-
+from datetime import datetime , timezone , timedelta
+from typing import List
 load_dotenv()
 
 
@@ -50,18 +50,47 @@ oriented answers
 """
 
 tools = [retrieve_context]
-
 agent = create_agent(model , tools , system_prompt=prompt)
 
 
+def rssfeeds_to_text(urls):
+    """ for a list of rss links scrape all the text with source and media url """
+    articles_url_list = []
+    for url in urls :
+        url_list = list_generator(url)
+        articles_url_list += url_list
+
+    print("Generated List of all article links from all rss feeds ")
+    extracted_text = all_articles_text(articles_url_list)
+    print("Final Text to be passed into the LLM extraced ")
+    return extracted_text
+
+
+
 def list_generator(feed_url):
+    """ get article links from rss feed link """
     list = []
     feed = feedparser.parse(feed_url)
-    print(len(feed.entries))
     for entry in feed.entries :
-        list.append(entry.link)
+        media_link=" "
+        if 'media_content' in entry:
+            media_link = entry.media_content[0]["url"]
+        elif 'href' in entry["links"][1]:
+            media_link =  entry["links"][1]['href']
+
+        item = {"url":entry.link , "media_link": media_link}
+        list.append(item)
     return list
 
+
+def all_articles_text(items_list):
+    final_text = " "
+    for item in items_list:
+        url = item["url"]
+        text = article_scrape(url).text
+        media_link = item["media_link"]
+        final_text += f"article_text:{text} url:{url} image_url:{media_link} "
+    return final_text
 
 def article_scrape(url):
     article = Article(url)
@@ -71,47 +100,36 @@ def article_scrape(url):
 
 
 
-def document_maker(url):
+def link_to_doc(url):
     article = article_scrape(url)
     doc= Document(page_content= article.text , metadata={"source":url})
     return doc
 
-def all_articles_text(url_list):
-    final_text = ""
-    for url in url_list:
-        doc = document_maker(url)
-        text = doc.page_content.strip()
-        url = doc.metadata["source"]
-        final_text = final_text + text + " " + url + " "
-    return final_text
 
 
-
-def documents_maker(url_list):
+def final_document(url_list):
+    """ Scrape the text from the urls in the list and return  list of Document() """
     final_document = []
     for url in url_list:
-        doc = document_maker(url)
+        doc = link_to_doc(url)
         final_document.append(doc)
     return final_document
 
-def get_news_data(date_prefix):
-    data = collection.find_one({"date": {"$regex": f"^{date_prefix}"}} , {"_id":0})
+def get_news_data():
+    start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    print(start)
+    end = start + timedelta(days=1)
+    data = collection.find_one(
+    {"date": {"$gte": start, "$lt": end}},
+    {"_id": 0}
+)
     return data
 
 
-
-def embeddings_to_vector_store(url_list):
-    document = documents_maker(url_list)
-    text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000, chunk_overlap=200, add_start_index=True)
-    all_splits = text_splitter.split_documents(document)
-    vector_store.create_vector_search_index(dimensions=3072)
-    vector_store.add_documents(documents=all_splits)
-    print("successfully embedded text")
-
-# Filtering & Summarizing Top 25 Articles 
-def summarize(url_list):
-    final_text = all_articles_text(url_list)
+# Daily brief generation by passing rss_feed list 
+def day_brief_generator(rssfeed_list : List[str] ):
+    final_text = rssfeeds_to_text(rssfeed_list)
+    print("final text passed into the LLM ")
 
     system_message = SystemMessage(prompt_message)
     human_message = HumanMessage(final_text)
@@ -119,51 +137,45 @@ def summarize(url_list):
 
     model_with_structure = model.with_structured_output(NewsResponse)
     response = model_with_structure.invoke(conversation)
+    print("Response Recieved from the LLM")
 
     #response = model.invoke(conversation)
     #print(response.content)
-    #print(response.usage_metadata)
 
-    print(response)
-    collection.insert_one(response.model_dump())
-    return response
+    # Inserting into db
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    updated_response = response.model_copy(update={"date": today })
+    collection.insert_one(updated_response.model_dump())
+    print("Successfully inserted into DB ")
+
+# Embedding selected articles into DB 
+def embeddings_to_vector_store():
+    data = get_news_data()
+    url_list = data["urls"]
+
+    document = final_document(url_list)
+    text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000, chunk_overlap=200, add_start_index=True)
+    all_splits = text_splitter.split_documents(document)
+    collection_em.delete_many({})
+    vector_store.create_vector_search_index(dimensions=3072)
+    vector_store.add_documents(documents=all_splits)
+    print("successfully embedded text")
 
 
+def generate_brief_insert_embedding():
+    rssfeed_list= ["https://feeds.feedburner.com/ndtvnews-top-stories" ,  "https://feeds.feedburner.com/ndtvnews-world-news"   ,"https://timesofindia.indiatimes.com/rssfeeds/296589292.cms" , "https://timesofindia.indiatimes.com/rssfeeds/1898055.cms" , "https://timesofindia.indiatimes.com/rssfeedstopstories.cms"  ]
+    day_brief_generator(rssfeed_list)
+    print("Done with Generating Daily Briefing")
+    embeddings_to_vector_store()
+    print("Embedding done to the vector store ")
 
+
+# To query the Vector Store to recieve Relevant response 
 def run_query(query:str):
     user_message = HumanMessage(query)
     messages = [user_message]
     response = agent.invoke({"messages":messages})
-    return response
-
-
-
-
-
-
-
-# Testing all the functions
-
-#summarize(url_list)
-#list_1 = list_generator("https://feeds.feedburner.com/ndtvnews-top-stories")
-#list_2 = list_generator("https://feeds.feedburner.com/ndtvnews-world-news")
-#list_4 = list_generator("https://www.indiatoday.in/rss/home")
-#combined_list = list_1 + list_2 + list_4
-
-#response = summarize(combined_list)
-#collection.insert_one(response.model_dump())
-
-
-#response = summarize(list_1)
-#updated_response = response.model_copy(update={"date": datetime.now(timezone.utc).isoformat() })
-#collection.insert_one(updated_response.model_dump())
-
-#date_prefix = "2025-10-25"
-#messages = collection.find_one({"date": {"$regex": f"^{date_prefix}"}})
-
-#print(messages["urls"])
-
-#embeddings_to_vector_store(messages["urls"])
-
-
+    updated_response = response.model_copy(update={"date": datetime.now(timezone.utc) })
+    return updated_response
 

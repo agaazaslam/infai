@@ -1,9 +1,7 @@
 from news import run_query
 from fastapi import FastAPI
 from models import QueryRequest, QueryResponse 
-from datetime import date
-from news import get_news_data
-
+from app.services.news_service import get_news_data
 app = FastAPI()
 
 @app.get('/health')
@@ -16,8 +14,7 @@ def home():
 
 @app.get('/news-today')
 def get_news():
-    today= date.today()
-    response =  get_news_data(str(today))
+    response =  get_news_data()
     return response
 
 
