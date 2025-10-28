@@ -6,19 +6,21 @@ import type { NewsItem } from "../types/news";
 import axios from "axios";
 import Header from "../components/Header";
 
-const dummy = {
-  "headline": "Albania Appoints AI Minister Pregnant with 83 \"Children\" to Assist Parliament",
-  "summary": "Albania's Prime Minister announced the appointment of \"Diella,\" an AI minister, who is \"pregnant\" with 83 assistants to aid parliament members.",
-  "category": "International",
-  "tags": [
-    "AI",
-    "Government",
-    "Technology"
-  ],
-  "url": "https://www.ndtv.com/world-news/diella-ai-minister-pregnant-with-83-children-albania-pms-bizarre-announcement-9519522",
-  "image_url": "https://c.ndtvimg.com/2025-10/rdihfi1g_albania-ai-minister-_625x300_26_October_25.jpg?im=FitAndFill,algorithm=dnn,width=1200,height=738"
-}
 
+//
+// const dummy = {
+//   "headline": "Albania Appoints AI Minister Pregnant with 83 \"Children\" to Assist Parliament",
+//   "summary": "Albania's Prime Minister announced the appointment of \"Diella,\" an AI minister, who is \"pregnant\" with 83 assistants to aid parliament members.",
+//   "category": "International",
+//   "tags": [
+//     "AI",
+//     "Government",
+//     "Technology"
+//   ],
+//   "url": "https://www.ndtv.com/world-news/diella-ai-minister-pregnant-with-83-children-albania-pms-bizarre-announcement-9519522",
+//   "image_url": "https://c.ndtvimg.com/2025-10/rdihfi1g_albania-ai-minister-_625x300_26_October_25.jpg?im=FitAndFill,algorithm=dnn,width=1200,height=738"
+// }
+//
 
 
 const News = () => {

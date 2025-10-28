@@ -1,8 +1,10 @@
-import type { Message } from "../App";
+import type { Message } from "../pages/Chat.tsx";
 
 interface ChatBubbleProp {
   message: Message;
 }
+
+
 
 const ChatBubble: React.FC<ChatBubbleProp> = ({ message }) => {
   return (
