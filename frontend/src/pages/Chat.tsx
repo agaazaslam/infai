@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent } from "react";
 import ChatBubble from "../components/ChatBubble";
 import axios from "axios";
-import { Ellipsis, Newspaper, Send } from "lucide-react";
+import { Ellipsis, Send } from "lucide-react";
 import { startupMessage } from "../components/message";
 import Footer from "../components/Footer.tsx";
 import Header from "../components/Header.tsx";

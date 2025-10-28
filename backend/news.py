@@ -130,6 +130,10 @@ def day_brief_generator(rssfeed_list : List[str] ):
     model_with_structure = model.with_structured_output(NewsResponse)
     response = model_with_structure.invoke(conversation)
     print("Response Recieved from the LLM")
+    if len(response.news_items) > 24:
+        print ("Items more than 25 reducing")
+        response.news_items = response.news_items[:24]
+        response.urls = response.urls[:24]
 
     #response = model.invoke(conversation)
     #print(response.content)
@@ -155,8 +159,9 @@ def embeddings_to_vector_store():
     print("successfully embedded text")
 
 
+# Main function to do add Briefing and Embedding to the backend
 def generate_brief_insert_embedding():
-    rssfeed_list= ["https://feeds.feedburner.com/ndtvnews-top-stories" ,  "https://feeds.feedburner.com/ndtvnews-world-news"   ,"https://timesofindia.indiatimes.com/rssfeeds/296589292.cms" , "https://timesofindia.indiatimes.com/rssfeeds/1898055.cms" , "https://timesofindia.indiatimes.com/rssfeedstopstories.cms"  ]
+    rssfeed_list= ["https://feeds.feedburner.com/ndtvnews-top-stories"   ,"https://timesofindia.indiatimes.com/rssfeeds/296589292.cms" , "https://timesofindia.indiatimes.com/rssfeeds/1898055.cms" , "https://timesofindia.indiatimes.com/rssfeedstopstories.cms"  ]
     day_brief_generator(rssfeed_list)
     print("Done with Generating Daily Briefing")
     embeddings_to_vector_store()

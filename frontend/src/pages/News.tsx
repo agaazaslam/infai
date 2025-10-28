@@ -1,6 +1,5 @@
-import { LoaderCircle, NewspaperIcon } from "lucide-react"
+import { LoaderCircle, SearchX } from "lucide-react"
 import Footer from "../components/Footer"
-import { Link } from "react-router"
 import NewsCard from "../components/NewsCard";
 import { useEffect, useState } from "react";
 import type { NewsItem } from "../types/news";
@@ -29,15 +28,31 @@ const News = () => {
 
   const [news, setNews] = useState<NewsItem[]>([]);
   const [isLoading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<boolean>(false);
 
   const fetchNews = async () => {
     setLoading(true)
-    const response = await axios.get(`${baseUrl}/news-today`);
-    const data = response.data;
-    const newsItems = data.news_items;
-    console.log(newsItems);
-    setNews(newsItems);
-    setLoading(false)
+    try {
+
+      const response = await axios.get(`${baseUrl}/news-today`);
+      const data = response.data;
+      const newsItems = data.news_items;
+      console.log(newsItems);
+      setNews(newsItems);
+
+
+    }
+
+    catch (currentError) {
+
+      setError(true);
+      console.log(currentError);
+
+    }
+    finally {
+
+      setLoading(false)
+    }
 
   }
 
@@ -57,9 +72,10 @@ const News = () => {
 
           {isLoading && <div> <LoaderCircle className="animate-spin w-24 h-24 text-neutral " />   </div>}
 
+          {!isLoading && error && (<div className="flex flex-col justify-center items-center"> <SearchX className="w-24 h-24 text-neutral" /> Could not find today's Data </div>)}
+
           {!isLoading && news && (<>
-            {news.map((newsItem: NewsItem) => <NewsCard data={newsItem} />)}
-            <NewsCard data={dummy} />
+            {news.map((newsItem: NewsItem) => <NewsCard key={newsItem.url} data={newsItem} />)}
 
           </>)}
 
