@@ -1,4 +1,5 @@
 import os
+from app.utils.utils import datetime_today
 from langchain.agents import create_agent
 from langchain.chat_models import init_chat_model
 from langchain.messages import HumanMessage
@@ -108,8 +109,7 @@ def final_document(url_list):
     return final_document
 
 def get_news_data():
-    start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    print(start)
+    start = datetime_today()
     end = start + timedelta(days=1)
     data = collection.find_one(
     {"date": {"$gte": start, "$lt": end}},
@@ -139,7 +139,7 @@ def day_brief_generator(rssfeed_list : List[str] ):
     #print(response.content)
 
     # Inserting into db
-    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today = datetime_today()
     updated_response = response.model_copy(update={"date": today })
     collection.insert_one(updated_response.model_dump())
     print("Successfully inserted into DB ")

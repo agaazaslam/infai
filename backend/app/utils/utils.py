@@ -1,4 +1,6 @@
-from datetime import datetime
+from datetime import datetime 
+from zoneinfo import ZoneInfo
+
 
 # Get current time
 def formatted_time():
@@ -7,3 +9,8 @@ def formatted_time():
     # Format as hh:mm AM/PM
     time_str = now.strftime("%I:%M %p") 
     return time_str
+
+def datetime_today():
+    return datetime.now(ZoneInfo("UTC")).replace(hour=0, minute=0, second=0, microsecond=0)
+
+
